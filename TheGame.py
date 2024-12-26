@@ -1,6 +1,6 @@
 ##############################################################################
 # DETAILS
-#  Attempt 1 at an draughts game
+#  A good template for a grid game of some kind
 #  Mr Reed - Dec 2024
 #
 #  Sounds 
@@ -10,15 +10,6 @@
 #  https://pixabay.com/music/search/relaxing%20game%20music/
 #
 ##############################################################################
-
-#To do
-#Make it so the pieces go into the grid data structure when you create one.
-#
-#They need to move around in the data structure as we drag them.  This will allow
-#the game to check if a piece is already on a square.  A drag should fail and go back to the 
-#picked up location if the user tries to drop a piece on an occupied square
-#
-#The "bar" and the "box area" must also be in the grid or this will fail when we take pieces off the board.
 
 ##############################################################################
 # IMPORTS
@@ -30,7 +21,7 @@ from UsefulClasses import perpetualTimer,MyGameGrid,MyClickableImageButton
 import tkinter
 from tkinter import messagebox
 
-from DraughtsClasses import Piece
+from TheGameClasses import Piece
 
 ##############################################################################
 # VARIABLES
@@ -72,7 +63,7 @@ COL_WHITE = (255,255,255)
 COL_GREEN = (0,255,0)
 BACK_FILL_COLOUR = COL_WHITE
 
-backImageName = "./images/draughts grid.jpg"
+backImageName = "./images/backgroundGrid.jpg"
 undoImageName = "./images/Undo.jpg"
 undoImageGreyName = "./images/UndoGrey.jpg"
 muteImageName = "./images/Mute.jpg"
