@@ -31,7 +31,11 @@ from TheGameClasses import Piece
 EMPTY_SQUARE = 0
 BLACK_PIECE = 1
 WHITE_PIECE = 2
-theGameGrid = MyGameGrid(8,8,[EMPTY_SQUARE,BLACK_PIECE,WHITE_PIECE],0)
+
+GAMECOLS = 13
+GAMEROWS = 9
+
+theGameGrid = MyGameGrid(GAMEROWS,GAMECOLS,[EMPTY_SQUARE,BLACK_PIECE,WHITE_PIECE],0)
 
 RIGHT_MOUSE_BUTTON = 3
 
@@ -228,10 +232,10 @@ def InfoButtonCallback():
 
 def DrawGreenLinesOverTheBoard(width): 
     if(gridLinesOn):
-        for i in range(9):
-            pygame.draw.line(surface,COL_GREEN,(TOP_LEFT[0]+i*GRID_SIZE_X, TOP_LEFT[1]),(TOP_LEFT[0]+i*GRID_SIZE_X, TOP_LEFT[0] + 8*GRID_SIZE_Y),width)
-        for i in range(9):
-            pygame.draw.line(surface,COL_GREEN,(TOP_LEFT[0], 27+i*GRID_SIZE_Y),(TOP_LEFT[0]+8*GRID_SIZE_X, TOP_LEFT[1]+i*GRID_SIZE_Y),width)
+        for i in range(GAMECOLS):
+            pygame.draw.line(surface,COL_GREEN,(TOP_LEFT[0]+i*GRID_SIZE_X, TOP_LEFT[1]),(TOP_LEFT[0]+i*GRID_SIZE_X, TOP_LEFT[1] + (GAMEROWS-1)*GRID_SIZE_Y),width)
+        for i in range(GAMEROWS):
+            pygame.draw.line(surface,COL_GREEN,(TOP_LEFT[0], TOP_LEFT[1]+i*GRID_SIZE_Y),(TOP_LEFT[0]+(GAMECOLS-1)*GRID_SIZE_X, TOP_LEFT[1]+i*GRID_SIZE_Y),width)
 
 def PutPiecesInTheBox():
     global allPieces
