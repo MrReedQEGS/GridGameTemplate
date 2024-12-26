@@ -200,6 +200,7 @@ def HandleInput(running):
 
             #Let go of a piece if we have one
             if(draggingPiece != None):
+                pygame.mixer.Sound.play(clickSound)
                 somePos = draggingPiece.GetPos()
 
                 dropLocation = [TOP_LEFT[0] + currentSquare[0]*GRID_SIZE_X+5,TOP_LEFT[1] + currentSquare[1]*GRID_SIZE_Y+5]
