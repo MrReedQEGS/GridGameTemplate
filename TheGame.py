@@ -27,6 +27,10 @@ from TheGameClasses import Piece
 # VARIABLES
 ##############################################################################
 
+APP_NAME = "Grid game temmplate"
+COPYRIGHT_MESSAGE = "Mark Reed (c) 2024"
+WINDOW_TEXT = APP_NAME + " - " + COPYRIGHT_MESSAGE
+
 #CREATE THE EMPTY GAME GRID OBJECT
 EMPTY_SQUARE = 0
 BLACK_PIECE = 1
@@ -60,7 +64,7 @@ GAME_TIME_Y = BUTTON_Y_VALUE + 5
 # of specific dimension.
 surface = pygame.display.set_mode((SCREEN_WIDTH,SCREEN_HEIGHT))
 #surface.set_colorkey((255, 255, 255))  #White background sprites should now be transparent background!
-pygame.display.set_caption('Draughts - Mark Reed (c) 2024')
+pygame.display.set_caption(WINDOW_TEXT)
 
 COL_BLACK = (0,0,0)
 COL_WHITE = (255,255,255)
