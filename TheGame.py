@@ -16,12 +16,10 @@
 ##############################################################################
 import pygame, random, time
 from pygame.locals import *
-from UsefulClasses import perpetualTimer,MyGameGrid,MyClickableImageButton
+from UsefulClasses import perpetualTimer,MyGameGrid,MyClickableImageButton,Piece
 
 import tkinter
 from tkinter import messagebox
-
-from TheGameClasses import Piece
 
 ##############################################################################
 # VARIABLES
@@ -33,27 +31,28 @@ WINDOW_TEXT = APP_NAME + " - " + COPYRIGHT_MESSAGE
 
 #CREATE THE EMPTY GAME GRID OBJECT
 EMPTY_SQUARE = 0
-BLACK_PIECE = 1
-WHITE_PIECE = 2
+PLAYER1 = 1
+PLAYER2 = 2
 
-GAMECOLS = 13
-GAMEROWS = 9
+GAMECOLS = 12
+GAMEROWS = 8
 
-theGameGrid = MyGameGrid(GAMEROWS,GAMECOLS,[EMPTY_SQUARE,BLACK_PIECE,WHITE_PIECE],0)
+GRID_SIZE_X = 52
+GRID_SIZE_Y = 52
+TOP_LEFT = (26,28)
+PIECE_OFFSET_X = 4
+PIECE_OFFSET_Y = 6
 
 RIGHT_MOUSE_BUTTON = 3
 
 DEBUG_ON = False
 
-GRID_SIZE_X = 52
-GRID_SIZE_Y = 52
-TOP_LEFT = (26,28)
-
 SCREEN_WIDTH = 678
 SCREEN_HEIGHT = 504
 
-BUTTON_X_VALUE = 586
+BUTTON_X_VALUE = 556
 BUTTON_Y_VALUE  = 472
+BUTTON_WIDTH = 30
 
 gridLinesOn = False
 
@@ -78,12 +77,13 @@ muteImageName = "./images/Mute.jpg"
 muteImageGreyName = "./images/MuteGrey.jpg"
 infoImageName = "./images/Info.jpg"
 infoImageGreyName = "./images/InfoGrey.jpg"
+eyeImageName = "./images/Eye.jpg"
+eyeImageGreyName = "./images/EyeGrey.jpg"
 
 player1PieceImageName = "./images/player1Piece.png"
 player2PieceImageName = "./images/player2Piece.png"
 
 PIECE_SIZE = 20
-draggingPiece = None
 
 #sounds
 pygame.mixer.init()
@@ -124,7 +124,7 @@ def TurnOffTimers():
         
     global myOneSecondTimer
     if(myOneSecondTimer!=None):
-        myOneSecondTimer.cancel()
+        myOneSecondTimer.Stop()
         myOneSecondTimer = None
         if(DEBUG_ON):
             print("Turnning off timer...myOneSecondTimer")
@@ -132,6 +132,7 @@ def TurnOffTimers():
 def LoadImages():
     global backImage,undoImage,undoGreyImage,muteImage,muteGreyImage
     global infoImage,infoGreyImage,player1PieceImage,player2PieceImage
+    global eyeImage,eyeGreyImage
  
     backImage = pygame.image.load(backImageName).convert()
 
@@ -153,29 +154,10 @@ def LoadImages():
     muteGreyImage = pygame.image.load(muteImageGreyName).convert()
     infoImage = pygame.image.load(infoImageName).convert()
     infoGreyImage = pygame.image.load(infoImageGreyName).convert()
+    eyeImage = pygame.image.load(eyeImageName).convert()
+    eyeGreyImage = pygame.image.load(eyeImageGreyName).convert()
         
-def WhatSquareAreWeIn(aPosition):
-    #Find out what square somebody clicked on.
-    #For example, if we click top left the the answer is row 1 col 1  (aka  "a1")
-    currentClickX = aPosition[0]
-    currentClickY = aPosition[1]
-   
-    adjustedX = currentClickX-TOP_LEFT[0]
-    col = adjustedX//(GRID_SIZE_X+1) #The +1 in the brackets seems to fix the identifcation of col 6 to 7 which was a bit out?
-   
-    adjustedY = currentClickY-TOP_LEFT[1]
-    row = adjustedY//(GRID_SIZE_Y)
-   
-    if DEBUG_ON:
-        print("Current x = {}\nCurrrent y = {}".format(currentClickX,currentClickY))
-        print("Col  =  {}".format(col))
-        print("row  =  {}".format(row))
-
-    return col,row
-
 def HandleInput(running):
-    
-    global waitingForYesNo,draggingPiece
 
     for event in pygame.event.get():
 
@@ -184,42 +166,48 @@ def HandleInput(running):
 
         if event.type == pygame.MOUSEBUTTONDOWN:
             currentMousePos = pygame.mouse.get_pos()
+            currentSquare = theGameGrid.WhatSquareAreWeIn(currentMousePos)
+            thingAtThatPosition = theGameGrid.GetGridItem(currentSquare)
+
+            print("Square clicked in : ", currentSquare)
+            if(thingAtThatPosition == None):
+                print("Thing clicked on : ", "None")
+            else:
+                print("Thing clicked on : ", thingAtThatPosition.GetPlayerNum())
+
+            theGameGrid.DebugPrintSelf()
             
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == RIGHT_MOUSE_BUTTON:
-                #print ("You pressed the right mouse button")
-                for piece in allPieces:
-                    if(piece.ClickedOnMe(currentMousePos)):
-                        piece._king = not piece._king
-            else:
-                #did we click on a piece?
-                for piece in allPieces:
-                    if(piece.ClickedOnMe(currentMousePos)):
-                        draggingPiece = piece
-                        #The last piece in the allpieces list is draw last, so move the dragged one to last
-                        #in the list to make it draw on top of every other piece as you drag it...simples!
-                        allPieces.remove(draggingPiece)
-                        allPieces.append(draggingPiece)
+                print ("You clicked the right mouse button")
 
-           
+            else:
+                #did we click on a piece...if so we need to drag it around!
+                #TODO Dragging code goes here.
+                #Find which piece we have clicked on a set its dragging variable to True so it follows the mouse.
+                #Remember where it came from in case it needs to be put back due to an incorrect drop in an occupied space or off the board.
+                print("Left click")
+                pass
+
         elif event.type == pygame.MOUSEBUTTONUP:
-            currentMousePos = pygame.mouse.get_pos()
-            currentSquare = WhatSquareAreWeIn(currentMousePos)
+            print("Mouse up")
+            #currentMouePos = pygame.mouse.get_pos()
+            #currentSquare = WhatSquareAreWeIn(currentMousePos)
             #print("Square dropped in : ", currentSquare)
 
             #Let go of a piece if we have one
-            if(draggingPiece != None):
-                pygame.mixer.Sound.play(clickSound)
-                somePos = draggingPiece.GetPos()
-
-                dropLocation = [TOP_LEFT[0] + currentSquare[0]*GRID_SIZE_X+5,TOP_LEFT[1] + currentSquare[1]*GRID_SIZE_Y+5]
-                draggingPiece.SetPos(dropLocation)
-                draggingPiece = None
-                  
+            #TODO Dragging code goes here.
+            #Add the dragged piece to the square we are over.
+            #If it is an occupied square then drop the piece back where it came from.
+           
     return running
+
+def EyeButtonCallback():
+    global gridLinesOn
+    gridLinesOn = not gridLinesOn
 
 def UndoButtonCallback():
     print("undo pressed...")
-    PutPiecesInTheBox()
+    PutPiecesInStartingPositions()
     
 def MuteButtonCallback():
     global musicOn
@@ -231,31 +219,25 @@ def MuteButtonCallback():
         pygame.mixer.music.unpause()
             
 def InfoButtonCallback():
-    global gridLinesOn
-    gridLinesOn = not gridLinesOn
+   print("Info pressed")
 
-def DrawGreenLinesOverTheBoard(width): 
-    if(gridLinesOn):
-        for i in range(GAMECOLS):
-            pygame.draw.line(surface,COL_GREEN,(TOP_LEFT[0]+i*GRID_SIZE_X, TOP_LEFT[1]),(TOP_LEFT[0]+i*GRID_SIZE_X, TOP_LEFT[1] + (GAMEROWS-1)*GRID_SIZE_Y),width)
-        for i in range(GAMEROWS):
-            pygame.draw.line(surface,COL_GREEN,(TOP_LEFT[0], TOP_LEFT[1]+i*GRID_SIZE_Y),(TOP_LEFT[0]+(GAMECOLS-1)*GRID_SIZE_X, TOP_LEFT[1]+i*GRID_SIZE_Y),width)
-
-def PutPiecesInTheBox():
-    global allPieces
-    allPieces = []
+def PutPiecesInStartingPositions():
     for i in range(8):
-        someGamePiece = Piece(player1PieceImage,[30+GRID_SIZE_X*9, 33+GRID_SIZE_Y*i],surface)
-        allPieces.append(someGamePiece)
+        someGamePiece = Piece(player1PieceImage,surface,PLAYER1,False)
+        theGameGrid.SetGridItem((9,i),someGamePiece)
+        
     for i in range(4):
-        someGamePiece = Piece(player1PieceImage,[30+GRID_SIZE_X*10, 33+GRID_SIZE_Y*i],surface)
-        allPieces.append(someGamePiece)
+        someGamePiece = Piece(player1PieceImage,surface,PLAYER1,False)
+        theGameGrid.SetGridItem((10,i),someGamePiece)
+        
     for i in range(4):
-        someGamePiece = Piece(player2PieceImage,[30+GRID_SIZE_X*10, 33+GRID_SIZE_Y*(4+i)],surface)
-        allPieces.append(someGamePiece)
+        someGamePiece = Piece(player2PieceImage,surface,PLAYER2,False)
+        theGameGrid.SetGridItem((10,4+i),someGamePiece)
+        
     for i in range(8):
-        someGamePiece = Piece(player2PieceImage,[30+GRID_SIZE_X*11, 33+GRID_SIZE_Y*i],surface)
-        allPieces.append(someGamePiece)
+        someGamePiece = Piece(player2PieceImage,surface,PLAYER2,False)
+        theGameGrid.SetGridItem((11,i),someGamePiece)
+        
     
     
 
@@ -264,14 +246,17 @@ def PutPiecesInTheBox():
 ##############################################################################
 pygame.init()
 
+theGameGrid = MyGameGrid(GAMEROWS,GAMECOLS,GRID_SIZE_X,GRID_SIZE_Y,TOP_LEFT,PIECE_OFFSET_X,PIECE_OFFSET_Y,COL_GREEN)
+
 LoadImages()
 
-theUndoButton = MyClickableImageButton(BUTTON_X_VALUE + 30*2,BUTTON_Y_VALUE,undoImage,undoGreyImage,surface,UndoButtonCallback)
-theMuteButton = MyClickableImageButton(BUTTON_X_VALUE + 30,BUTTON_Y_VALUE,muteImage,muteGreyImage,surface,MuteButtonCallback)
-theInfoButton = MyClickableImageButton(BUTTON_X_VALUE,BUTTON_Y_VALUE,infoImage,infoGreyImage,surface,InfoButtonCallback)
+theEyeButton = MyClickableImageButton(BUTTON_X_VALUE,BUTTON_Y_VALUE,eyeImage,eyeGreyImage,surface,EyeButtonCallback)
+theInfoButton = MyClickableImageButton(BUTTON_X_VALUE + BUTTON_WIDTH*1,BUTTON_Y_VALUE,infoImage,infoGreyImage,surface,InfoButtonCallback)
+theMuteButton = MyClickableImageButton(BUTTON_X_VALUE + BUTTON_WIDTH*2,BUTTON_Y_VALUE,muteImage,muteGreyImage,surface,MuteButtonCallback)
+theUndoButton = MyClickableImageButton(BUTTON_X_VALUE + BUTTON_WIDTH*3,BUTTON_Y_VALUE,undoImage,undoGreyImage,surface,UndoButtonCallback)
 
 allPieces = []
-PutPiecesInTheBox()
+PutPiecesInStartingPositions()
 
 #game loop
 while running:
@@ -281,22 +266,21 @@ while running:
     # Using blit to copy the background grid onto the blank screen
     surface.blit(backImage, (1, 1))
 
-    DrawGreenLinesOverTheBoard(3)
+    if(gridLinesOn):
+        theGameGrid.DrawGridLines(surface)
 
-    theUndoButton.DrawSelf()
-    theMuteButton.DrawSelf()
+    theEyeButton.DrawSelf()
     theInfoButton.DrawSelf()
+    theMuteButton.DrawSelf()
+    theUndoButton.DrawSelf()
 
     running = HandleInput(running)
    
     #We may be dragging a particular piece!
-    currentMousePos = pygame.mouse.get_pos()    
-    if(draggingPiece != None):  
-        dragLocation = [currentMousePos[0]-GRID_SIZE_X//2,currentMousePos[1]-GRID_SIZE_Y//2]
-        draggingPiece.SetPos(dragLocation)
+    #TODO - Draw the dragged piece on the mouse if there is one.
 
-    for piece in allPieces:
-        piece.DrawSelf()
+    ##Draw all pieces that are on the board.
+    theGameGrid.DrawSelf()
        
     if(running):
         gameTimeSurface = my_font.render("Time elapsed : {}".format(gameTime), False, (0, 0, 0))
