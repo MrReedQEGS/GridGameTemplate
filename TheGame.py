@@ -223,7 +223,15 @@ def UndoButtonCallback():
     print("undo pressed...")
 
 def RestartButtonCallback():
-    PutPiecesInStartingPositions()
+
+    #Use a TKINTER message box :)
+    #Turn events off and then back on to stop pygame picking up the mouse click too!
+    pygame.event.set_blocked(pygame.MOUSEBUTTONUP) 
+    answer = messagebox.askyesno("Question","Do you really to reset the whole game?")
+    if(answer):
+        PutPiecesInStartingPositions()
+    pygame.event.set_allowed(None)
+
 
 def MuteButtonCallback():
     global musicOn
