@@ -78,12 +78,19 @@ class Piece(pygame.sprite.Sprite):
         self._parentSurface = newParentSurface
         self._playerNum = newPlayerNum
         self._beingDragged = newBeingDragged
+        self._pickedUpFromLocation = None
 
     def DrawSelf(self,somePos):
         self._parentSurface.blit(self._image, somePos)
 
-    def SetDragged(self, newBeingDragged):
-        self._beingDragged = newBeingDragged
+    def SetPickedUpFromLocation(self,somePos):
+        self._pickedUpFromLocation = somePos
+
+    def GetPickedUpFromLocation(self):
+        return self._pickedUpFromLocation
+
+    def SetDragged(self, newDragStatus):
+        self._beingDragged = newDragStatus
 
     def GetDragged(self):
         return self._beingDragged
@@ -112,6 +119,12 @@ class MyGameGrid():
         self._pieceBeingDragged = None
         self._theGrid = list()
         self.BlankTheGrid()
+
+    def SetDraggedPiece(self,somePiece):
+        self._pieceBeingDragged = somePiece
+
+    def GetDraggedPiece(self):
+        return self._pieceBeingDragged
         
     def BlankTheGrid(self):
         #Make the whole grid "blank"
@@ -123,6 +136,17 @@ class MyGameGrid():
         
             self._theGrid.append(newRow)
 
+    def OutsideGrid(self,theCoord):
+
+        x = theCoord[0]
+        y = theCoord[1]
+
+        if(x >= self._cols or y >= self._rows or x < 0 or y < 0):
+
+            return True
+        else:
+            return False
+        
     def GetGridItem(self,theCoord):
         #The x and y are coords starting at zero of a position on the game grid that we want
         #
@@ -143,16 +167,19 @@ class MyGameGrid():
         #
         # We need to access items using theGrid[y][x]
 
-        x = theCoord[0]
-        y = theCoord[1]
-        return self._theGrid[y][x]
+        if(self.OutsideGrid(theCoord)):
+            return None
+        else:
+            x = theCoord[0]
+            y = theCoord[1]
+            return self._theGrid[y][x]
 
     def SetGridItem(self,theCoord,newItem):
         x = theCoord[0]
         y = theCoord[1]
         self._theGrid[y][x] = newItem 
 
-    def DrawSelf(self):
+    def DrawSelf(self,currentMousePos):
 
         rowNum = 0
         for row in self._theGrid:
@@ -165,6 +192,11 @@ class MyGameGrid():
                 colNum = colNum + 1
             rowNum = rowNum + 1
 
+        #If there is a dragged piece then draw it at the current mouse pos
+        if(self._pieceBeingDragged != None):
+            posToDraw = (currentMousePos[0]-5*self._pieceOffsetX,currentMousePos[1]-3*self._pieceOffsetY)
+            self._pieceBeingDragged.DrawSelf(posToDraw)
+
     def DebugPrintSelf(self):
         for row in self._theGrid:
             for somePiece in row:
@@ -174,7 +206,10 @@ class MyGameGrid():
                     print(somePiece.GetPlayerNum(),end=" ")
             print("")
         
-        print("Dragged piece : " + str(self._pieceBeingDragged))
+        if(self._pieceBeingDragged != None):
+            print("Dragged piece : ",self._pieceBeingDragged.GetPlayerNum())
+        else:
+            print("Dragged piece : ", "None")
     
     def DrawGridLines(self,someSurface): 
         LINE_WIDTH = 3

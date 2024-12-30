@@ -50,7 +50,7 @@ DEBUG_ON = False
 SCREEN_WIDTH = 678
 SCREEN_HEIGHT = 504
 
-BUTTON_X_VALUE = 556
+BUTTON_X_VALUE = 526
 BUTTON_Y_VALUE  = 472
 BUTTON_WIDTH = 30
 
@@ -79,6 +79,8 @@ infoImageName = "./images/Info.jpg"
 infoImageGreyName = "./images/InfoGrey.jpg"
 eyeImageName = "./images/Eye.jpg"
 eyeImageGreyName = "./images/EyeGrey.jpg"
+restartImageName = "./images/Restart.jpg"
+restartImageGreyName = "./images/RestartGrey.jpg"
 
 player1PieceImageName = "./images/player1Piece.png"
 player2PieceImageName = "./images/player2Piece.png"
@@ -132,7 +134,7 @@ def TurnOffTimers():
 def LoadImages():
     global backImage,undoImage,undoGreyImage,muteImage,muteGreyImage
     global infoImage,infoGreyImage,player1PieceImage,player2PieceImage
-    global eyeImage,eyeGreyImage
+    global eyeImage,eyeGreyImage,restartImage,restartGreyImage
  
     backImage = pygame.image.load(backImageName).convert()
 
@@ -156,7 +158,9 @@ def LoadImages():
     infoGreyImage = pygame.image.load(infoImageGreyName).convert()
     eyeImage = pygame.image.load(eyeImageName).convert()
     eyeGreyImage = pygame.image.load(eyeImageGreyName).convert()
-        
+    restartImage = pygame.image.load(restartImageName).convert()
+    restartGreyImage = pygame.image.load(restartImageGreyName).convert()
+
 def HandleInput(running):
 
     for event in pygame.event.get():
@@ -169,35 +173,45 @@ def HandleInput(running):
             currentSquare = theGameGrid.WhatSquareAreWeIn(currentMousePos)
             thingAtThatPosition = theGameGrid.GetGridItem(currentSquare)
 
-            print("Square clicked in : ", currentSquare)
-            if(thingAtThatPosition == None):
-                print("Thing clicked on : ", "None")
-            else:
-                print("Thing clicked on : ", thingAtThatPosition.GetPlayerNum())
-
-            theGameGrid.DebugPrintSelf()
+            #print("Square clicked in : ", currentSquare)
             
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == RIGHT_MOUSE_BUTTON:
                 print ("You clicked the right mouse button")
 
             else:
                 #did we click on a piece...if so we need to drag it around!
-                #TODO Dragging code goes here.
-                #Find which piece we have clicked on a set its dragging variable to True so it follows the mouse.
-                #Remember where it came from in case it needs to be put back due to an incorrect drop in an occupied space or off the board.
-                print("Left click")
-                pass
+                if(thingAtThatPosition != None):
+                    #player is picking up a piece - the clicked square is not empty!
+                    thingAtThatPosition.SetDragged(True)
+                    thingAtThatPosition.SetPickedUpFromLocation(currentSquare)
+                    theGameGrid.SetDraggedPiece(thingAtThatPosition)
+                    theGameGrid.SetGridItem(currentSquare,None)
+            
+            if(DEBUG_ON):
+                theGameGrid.DebugPrintSelf()
 
         elif event.type == pygame.MOUSEBUTTONUP:
-            print("Mouse up")
-            #currentMouePos = pygame.mouse.get_pos()
-            #currentSquare = WhatSquareAreWeIn(currentMousePos)
-            #print("Square dropped in : ", currentSquare)
+            #print("Mouse up")
+            currentMousePos = pygame.mouse.get_pos()
+            currentSquare = theGameGrid.WhatSquareAreWeIn(currentMousePos)
+            thingAtThatPosition = theGameGrid.GetGridItem(currentSquare)
 
-            #Let go of a piece if we have one
-            #TODO Dragging code goes here.
-            #Add the dragged piece to the square we are over.
-            #If it is an occupied square then drop the piece back where it came from.
+            someDraggedPiece = theGameGrid.GetDraggedPiece()
+            if(someDraggedPiece != None):
+                #we are dragging, so put it down...if the Square is empty
+                theGameGrid.SetDraggedPiece(None)
+
+                if(thingAtThatPosition == None and theGameGrid.OutsideGrid(currentSquare) == False):
+                    theGameGrid.SetGridItem(currentSquare,someDraggedPiece)
+                else:
+                    #the piece cannot go here...put it back to the place it came from
+                    whereItCameFrom = someDraggedPiece.GetPickedUpFromLocation()
+                    theGameGrid.SetGridItem(whereItCameFrom,someDraggedPiece)
+
+                someDraggedPiece.SetDragged(False)
+
+            if(DEBUG_ON):
+                theGameGrid.DebugPrintSelf()
            
     return running
 
@@ -207,8 +221,10 @@ def EyeButtonCallback():
 
 def UndoButtonCallback():
     print("undo pressed...")
+
+def RestartButtonCallback():
     PutPiecesInStartingPositions()
-    
+
 def MuteButtonCallback():
     global musicOn
     if(musicOn):
@@ -222,6 +238,9 @@ def InfoButtonCallback():
    print("Info pressed")
 
 def PutPiecesInStartingPositions():
+
+    theGameGrid.BlankTheGrid()
+
     for i in range(8):
         someGamePiece = Piece(player1PieceImage,surface,PLAYER1,False)
         theGameGrid.SetGridItem((9,i),someGamePiece)
@@ -238,9 +257,6 @@ def PutPiecesInStartingPositions():
         someGamePiece = Piece(player2PieceImage,surface,PLAYER2,False)
         theGameGrid.SetGridItem((11,i),someGamePiece)
         
-    
-    
-
 ##############################################################################
 # MAIN
 ##############################################################################
@@ -250,10 +266,11 @@ theGameGrid = MyGameGrid(GAMEROWS,GAMECOLS,GRID_SIZE_X,GRID_SIZE_Y,TOP_LEFT,PIEC
 
 LoadImages()
 
-theEyeButton = MyClickableImageButton(BUTTON_X_VALUE,BUTTON_Y_VALUE,eyeImage,eyeGreyImage,surface,EyeButtonCallback)
-theInfoButton = MyClickableImageButton(BUTTON_X_VALUE + BUTTON_WIDTH*1,BUTTON_Y_VALUE,infoImage,infoGreyImage,surface,InfoButtonCallback)
-theMuteButton = MyClickableImageButton(BUTTON_X_VALUE + BUTTON_WIDTH*2,BUTTON_Y_VALUE,muteImage,muteGreyImage,surface,MuteButtonCallback)
-theUndoButton = MyClickableImageButton(BUTTON_X_VALUE + BUTTON_WIDTH*3,BUTTON_Y_VALUE,undoImage,undoGreyImage,surface,UndoButtonCallback)
+theRestartButton = MyClickableImageButton(BUTTON_X_VALUE,BUTTON_Y_VALUE,restartImage,restartGreyImage,surface,RestartButtonCallback)
+theEyeButton = MyClickableImageButton(BUTTON_X_VALUE + BUTTON_WIDTH*1,BUTTON_Y_VALUE,eyeImage,eyeGreyImage,surface,EyeButtonCallback)
+theInfoButton = MyClickableImageButton(BUTTON_X_VALUE + BUTTON_WIDTH*2,BUTTON_Y_VALUE,infoImage,infoGreyImage,surface,InfoButtonCallback)
+theMuteButton = MyClickableImageButton(BUTTON_X_VALUE + BUTTON_WIDTH*3,BUTTON_Y_VALUE,muteImage,muteGreyImage,surface,MuteButtonCallback)
+theUndoButton = MyClickableImageButton(BUTTON_X_VALUE + BUTTON_WIDTH*4,BUTTON_Y_VALUE,undoImage,undoGreyImage,surface,UndoButtonCallback)
 
 allPieces = []
 PutPiecesInStartingPositions()
@@ -269,6 +286,7 @@ while running:
     if(gridLinesOn):
         theGameGrid.DrawGridLines(surface)
 
+    theRestartButton.DrawSelf()
     theEyeButton.DrawSelf()
     theInfoButton.DrawSelf()
     theMuteButton.DrawSelf()
@@ -280,7 +298,8 @@ while running:
     #TODO - Draw the dragged piece on the mouse if there is one.
 
     ##Draw all pieces that are on the board.
-    theGameGrid.DrawSelf()
+    currentMousePos = pygame.mouse.get_pos()
+    theGameGrid.DrawSelf(currentMousePos)
        
     if(running):
         gameTimeSurface = my_font.render("Time elapsed : {}".format(gameTime), False, (0, 0, 0))
