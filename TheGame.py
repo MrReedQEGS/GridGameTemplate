@@ -9,6 +9,10 @@
 #  Music
 #  https://pixabay.com/music/search/relaxing%20game%20music/
 #
+#  Sprite sheet
+#  https://www.finalparsec.com/tools/sprite_sheet_maker
+#
+#
 ##############################################################################
 
 ##############################################################################
@@ -231,7 +235,6 @@ def RestartButtonCallback():
     if(answer):
         PutPiecesInStartingPositions()
     pygame.event.set_allowed(None)
-
 
 def MuteButtonCallback():
     global musicOn
